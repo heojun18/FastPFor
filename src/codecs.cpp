@@ -712,6 +712,8 @@ static struct option long_options[] = {
     {"codecs", required_argument, 0, 'c'},
     {"splitlongarrays", no_argument, 0, 'S'},
     {"short", no_argument, 0, 's'},
+    {"needtodelta", no_argument, 0, 'z'},
+    {"needtosort", no_argument, 0, 'y'},
     {0, 0, 0, 0}};
 
 void message() {
@@ -750,6 +752,9 @@ int main(int argc, char **argv) {
   bool fulldisplay = true;
   bool displayhistogram = false;
   bool computeentropy = false;
+	// arcj: add needtodelta option
+	bool needtodelta = false;
+	bool needtosort = false;
 
   bool splitlongarrays = true;
   vector<shared_ptr<IntegerCODEC>> tmp =
@@ -801,6 +806,14 @@ int main(int argc, char **argv) {
     case 'f':
       fulldisplay = true;
       break;
+		// arcj: needtodelta, datas must be sorted
+		case 'z':
+			needtodelta = true;
+			needtosort = true;
+			break;
+		case 'y':
+			needtosort = true;
+			break;
     case 0: {
       if (optind < argc) {
         cout << "There are some trailing flags...?" << endl;
@@ -820,16 +833,22 @@ int main(int argc, char **argv) {
           datas.push_back(generateZipfianArray32(N, 1.0, 1U << 20));
 
 				// arcj: need to sort for delta processing
-        for (uint32_t z = 0; z < (1U << 1); ++z) {
-					//cout << "[arcj] sorted datas " << z << endl;
-					sort(datas[z].begin(), datas[z].end());
-					//for (uint32_t y = 0; y < datas[z].size(); ++y)
-					//	cout << datas[z].at(y) << endl;
+				if(needtosort) {
+					cout << "[arcj] sorting generated zipfian data" << endl;
+					for (uint32_t z = 0; z < (1U << 1); ++z) {
+						//cout << "[arcj] sorted datas " << z << endl;
+						sort(datas[z].begin(), datas[z].end());
+						//for (uint32_t y = 0; y < datas[z].size(); ++y)
+						//	cout << datas[z].at(y) << endl;
+					}
 				}
 
         if (splitlongarrays)
           splitLongArrays(datas);
-        processparameters pp(false, fulldisplay, displayhistogram,
+        //processparameters pp(false, fulldisplay, displayhistogram,
+        //                     computeentropy, false);
+				// arcj: add need to delta
+        processparameters pp(needtodelta, fulldisplay, displayhistogram,
                              computeentropy, false);
         Delta::process(myalgos, datas, pp);
         summarize(myalgos, "#");
