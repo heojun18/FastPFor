@@ -37,6 +37,8 @@
 #include "streamvariablebyte.h"
 #include "simdgroupsimple.h"
 
+#include "iiu.h"
+
 namespace FastPForLib {
 
 typedef std::map<std::string, std::shared_ptr<IntegerCODEC>> CodecMap;
@@ -111,6 +113,8 @@ static inline CodecMap initializefactory() {
       new CompositeCodec<SIMDSimplePFor<>, VariableByte>());
   map["pfor"] =
       std::shared_ptr<IntegerCODEC>(new CompositeCodec<PFor, VariableByte>());
+  map["iiu"] =
+      std::shared_ptr<IntegerCODEC>(new CompositeCodec<IIU, VariableByte>());
   map["simdpfor"] = std::shared_ptr<IntegerCODEC>(
       new CompositeCodec<SIMDPFor, VariableByte>());
   map["pfor2008"] = std::shared_ptr<IntegerCODEC>(

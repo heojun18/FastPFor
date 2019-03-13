@@ -123,6 +123,8 @@ public:
         exceptcounter += (in[k] >= maxgap);
       }
     }
+		std::cout << "[arcj] compressblockPFOR " << exceptcounter << std::endl;
+
     if (exceptcounter == 0) {
       packblock(in, outputbegin, b);
       return BlockSize;
@@ -176,11 +178,12 @@ public:
   void encodeArray(const uint32_t *in, const size_t len, uint32_t *out,
                    size_t &nvalue) {
     *out++ = static_cast<uint32_t>(len);
+		std::cout << "[arcj] pfor::encodeArray " << out-1 << "/" << *(out-1) << std::endl;
 #ifndef NDEBUG
     const uint32_t *const finalin(in + len);
 #endif
     const uint32_t maxsize = (1U << (32 - blocksizeinbits - 1));
-    size_t totalnvalue(1);
+    size_t totalnvalue(1); // arcj:store len
     // for (size_t i = 0; i < len; i += maxsize)
     for (size_t j = 0; j < (len + maxsize - 1U) / maxsize; ++j) {
       size_t i = j << (32 - blocksizeinbits - 1);
@@ -191,16 +194,19 @@ public:
       }
       size_t thisnvalue = nvalue - totalnvalue;
       assert(in + i + l <= finalin);
+			std::cout << "[arcj] encodeArray1 " << totalnvalue << "/" << thisnvalue << "/" << out << std::endl;
       __encodeArray(&in[i], l, out, thisnvalue);
       totalnvalue += thisnvalue;
       assert(totalnvalue <= nvalue);
       out += thisnvalue;
+			std::cout << "[arcj] encodeArray2 " << totalnvalue << "/" << thisnvalue << "/" << out << std::endl;
+			std::cout << std::endl;
     }
     nvalue = totalnvalue;
   }
   const uint32_t *decodeArray(const uint32_t *in, const size_t len,
                               uint32_t *out, size_t &nvalue) {
-    nvalue = *in++;
+    nvalue = *in++; // the # of compressed values
     if (nvalue == 0)
       return in;
 #ifndef NDEBUG
@@ -209,6 +215,7 @@ public:
     const uint32_t *const finalin = in + len;
     size_t totalnvalue(0);
     while (totalnvalue < nvalue) {
+			std::cout << "[arcj] decodeArray1 " << totalnvalue << "/" << nvalue << "/" << len << "/" << in << "/" << finalin << std::endl;
       size_t thisnvalue = nvalue - totalnvalue;
 #ifndef NDEBUG
       const uint32_t *const befin(in);
@@ -217,7 +224,7 @@ public:
       in = __decodeArray(in, finalin - in, out, thisnvalue);
       assert(in > befin);
       assert(in <= finalin);
-      out += thisnvalue;
+      out += thisnvalue; // arcj recovered values
       totalnvalue += thisnvalue;
       assert(totalnvalue <= nvalue);
     }
@@ -234,25 +241,35 @@ public:
     std::vector<DATATYPE> exceptions;
     exceptions.resize(len);
     DATATYPE *__restrict__ i = &exceptions[0];
-    const uint32_t b = determineBestBase(in, len);
+    //const uint32_t b = determineBestBase(in, len);
+    const uint32_t b = 7;
     *out++ = static_cast<uint32_t>(len);
     *out++ = b;
-    for (size_t k = 0; k < len / BlockSize; ++k) {
+    for (size_t k = 0; k < len / BlockSize; ++k) { // arcj: BlockSize = 128
       uint32_t *const headerout(out);
-      ++out;
+			//std::cout << "[arcj] __encodeArray2 " << initout << "/" << headerout << "/" << BlockSize << std::endl;
+      ++out; // arcj: For header
+			//std::cout << "[arcj] __encodeArray2-2 " << out << std::endl;
       uint32_t firstexcept = compressblockPFOR(in, out, b, i);
-      out += (BlockSize * b) / 32;
+			//std::cout << "[arcj] __encodeArray2-3 " << out << std::endl;
+      out += (BlockSize * b) / 32; // compressed normal values
+			//std::cout << "[arcj] __encodeArray2-4 " << out << std::endl;
       in += BlockSize;
-      const uint32_t bitsforfirstexcept = blocksizeinbits;
-      const uint32_t firstexceptmask = (1U << blocksizeinbits) - 1;
-      const uint32_t exceptindex = static_cast<uint32_t>(i - &exceptions[0]);
+      const uint32_t bitsforfirstexcept = blocksizeinbits; // 7
+      const uint32_t firstexceptmask = (1U << blocksizeinbits) - 1; // 1111111
+      const uint32_t exceptindex = static_cast<uint32_t>(i - &exceptions[0]); // the # of exceptions
       *headerout =
           (firstexcept & firstexceptmask) | (exceptindex << bitsforfirstexcept);
+			std::cout << "[arcj] __encodeArray2-1 " << firstexcept << "/" << firstexceptmask << "/" << exceptindex << std::endl;
+			std::cout << "[arcj] __encodeArray2-2 " << headerout << "/" << *headerout << std::endl;
     }
     const size_t howmanyexcept = i - &exceptions[0];
-    for (uint32_t t = 0; t < howmanyexcept; ++t)
+		//std::cout << "[arcj] __encodeArray3-1 " << howmanyexcept << "/" << out << std::endl;
+    for (uint32_t t = 0; t < howmanyexcept; ++t) // arcj: store exceptions
       *out++ = exceptions[t];
+		//std::cout << "[arcj] __encodeArray3-2 " << howmanyexcept << "/" << out << std::endl;
     nvalue = out - initout;
+		//std::cout << "[arcj] __encodeArray4 " << initout << "/" << out << "/" << nvalue << std::endl;
   }
 
 #ifndef NDEBUG
@@ -264,15 +281,19 @@ public:
 #ifndef NDEBUG
     const uint32_t *const initin(in);
 #endif
-    nvalue = *in++;
+		//std::cout << "[arcj] __decodeArray1 " << in << std::endl;
+    nvalue = *in++; // the # of compressed values
+		//std::cout << "[arcj] __decodeArray2 " << in << "/" << nvalue << std::endl;
     checkifdivisibleby(nvalue, BlockSize);
-    const uint32_t b = *in++;
+    const uint32_t b = *in++; // b bits
     const DATATYPE *__restrict__ except =
-        in + nvalue * b / 32 + nvalue / BlockSize;
-    const uint32_t bitsforfirstexcept = blocksizeinbits;
-    const uint32_t firstexceptmask = (1U << blocksizeinbits) - 1;
+        in + nvalue * b / 32 + nvalue / BlockSize; // the address of exception list
+    const uint32_t bitsforfirstexcept = blocksizeinbits; // 7
+    const uint32_t firstexceptmask = (1U << blocksizeinbits) - 1; // 1111111
     const DATATYPE *endexceptpointer = except;
     const DATATYPE *const initexcept(except);
+		std::cout << "[arcj] __decodeArray " << except << std::endl;
+
     for (size_t k = 0; k < nvalue / BlockSize; ++k) {
       const uint32_t *const headerin(in);
       ++in;

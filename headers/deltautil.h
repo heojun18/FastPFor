@@ -317,12 +317,18 @@ public:
     }
   }
 
+	// arcj: Need to implement intersection, union, membership testing
   // a convenience function
   template <class container>
   static void process(std::vector<algostats> &myalgos,
                       const std::vector<container> &datas,
                       processparameters &pp, const std::string prefix = "") {
-    // pp.needtodelta = false;
+		std::cout << "[arcj] Delta::process" << std::endl;
+		// arcj: check processparamemters
+		//std::cout << "[arcj] check pp: " 
+		//	<< pp.needtodelta << " / "
+		//	<< std::endl;
+
     enum { verbose = false };
     if (datas.empty() || myalgos.empty())
       return;
@@ -413,6 +419,8 @@ public:
       std::cout << std::setprecision(4) << er.computeShannon() << "\t";
     if (pp.computeentropy && pp.fulldisplay)
       std::cout << std::setprecision(4) << er.computeDataBits() << "\t";
+
+		// arcj: start timer
     WallClockTimer z;
     size_t totallength = 0;
     size_t maxlength = 0;
@@ -428,6 +436,7 @@ public:
     container recovereds(maxlength + 2048 + 64);
     container backupdata;
     backupdata.reserve(maxlength + 2048 + 64);
+
     for (auto i = myalgos.begin(); i != myalgos.end(); ++i) {
       IntegerCODEC &c = *(i->algo);
       const bool SIMDDeltas = i->SIMDDeltas;
@@ -460,12 +469,29 @@ public:
           }
 
           z.reset();
+					// arcj: wall clock time: compression start
+					// arcj: print contents of backupdata.data
+					//std::cout << "[arcj] backupdata.data " << k << " " << backupdata.size() << std::endl;
+					//for(size_t z = 0; z < backupdata.size(); ++z) {
+					//	std::cout << backupdata.at(z) << " " << std::endl;
+					//}
+
+					//std::cout << "[arcj] Delta::encodeArray1 " << backupdata.size() << " / " << nvalue 
+				  //  << " / " << outp << " / " << *outp << std::endl;
+					//std::cout << std::endl;
+
+					//std::cout << "[arcj] Delta::encodeArray1-1 " << outp << std::endl;
           c.encodeArray(backupdata.data(), backupdata.size(), outp, nvalue);
+					std::cout << "[arcj] Delta:: Encoding successfully" << std::endl;
+					//std::cout << "[arcj] Delta::encodeArray1-2 " << outp << std::endl;
+					
+					// arcj: wall clock time: compression end
           nvalues[k] = nvalue;
           timemscomp += static_cast<double>(z.split());
         }
 
         totalcompressed += nvalue;
+				//std::cout << "[arcj] Delta::encodeArray2 " << nvalue << "/" << totalcompressed << std::endl;
       }
       for (size_t k = 0; k < datas.size(); ++k) {
         const uint32_t *outp = outs[k].data();
@@ -476,7 +502,16 @@ public:
         assert(!needPaddingTo128Bits(recov));
 
         z.reset();
+				// arcj: wall clock time: decompression start
+				//std::cout << "[arcj] Delta::decodeArray1 " << nvalue << "/" << recoveredsize << std::endl;
+
+				//std::cout << "[arcj] Delta::encodeArray2-1 " << outp << std::endl;
         c.decodeArray(outp, nvalue, recov, recoveredsize);
+				std::cout << "[arcj] Delta:: Decoding successfully" << std::endl;
+				//std::cout << "[arcj] Delta::encodeArray2-2 " << outp << std::endl;
+				//
+				//std::cout << "[arcj] Delta::decodeArray2 " << nvalue << "/" << recoveredsize << std::endl;
+				// arcj: wall clock time: decompression end
         timemsdecomp += static_cast<double>(z.split());
 
         if (pp.needtodelta) {
@@ -543,10 +578,12 @@ public:
                            static_cast<double>(timemsdelta)
                     << "\t";
         }
+				// arcj: Compression time
         std::cout << std::setprecision(4)
                   << static_cast<double>(totallength) /
                          static_cast<double>(timemscomp)
                   << "\t";
+				// arcj: Decompression time
         std::cout << std::setprecision(4)
                   << static_cast<double>(totallength) /
                          static_cast<double>(timemsdecomp)
@@ -557,6 +594,7 @@ public:
                            static_cast<double>(timemsinversedelta)
                     << "\t";
         }
+				// arcj: bits per integer
         std::cout << std::setprecision(4)
                   << static_cast<double>(totalcompressed) * 32.0 /
                          static_cast<double>(totallength)

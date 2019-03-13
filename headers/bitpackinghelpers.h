@@ -344,6 +344,59 @@ inline void fastpackwithoutmask(const uint32_t *__restrict__ in,
   }
 }
 
+// arcj
+inline void fastunpack_iiu(const uint32_t *__restrict__ in,
+                       uint32_t *__restrict__ out, const uint32_t bit) {
+  // Could have used function pointers instead of switch.
+  // Switch calls do offer the compiler more opportunities for optimization in
+  // theory. In this case, it makes no difference with a good compiler.
+  switch (bit) {
+  case 3:
+    __fastunpack3(in, out);
+    break;
+  case 7:
+    __fastunpack7_iiu(in, out);
+    break;
+  case 15:
+    __fastunpack15(in, out);
+    break;
+  case 32:
+    __fastunpack32(in, out);
+    break;
+  default:
+		std::cout << "[arcj] ERORR !!!! Not available bit" << std::endl;
+    break;
+  }
+}
+
+inline void fastpack_iiu(const uint32_t *__restrict__ in,
+                     //uint32_t *__restrict__ out, const uint32_t bit) {
+                     uint32_t *__restrict__ out, const uint32_t bit, const uint32_t *__restrict exception, const size_t exceptcounter, const uint32_t count) {
+  // Could have used function pointers instead of switch.
+  // Switch calls do offer the compiler more opportunities for optimization in
+  // theory. In this case, it makes no difference with a good compiler.
+  //std::cout << "[arcj] check list-" << count << " " << exceptcounter << " : ";
+  //for (uint32_t z = 0; z < exceptcounter; ++z)
+  //  std::cout << exception[z] << " / ";
+  //std::cout << std::endl;
+  switch (bit) {
+  case 3:
+    __fastpack3(in, out);
+    break;
+  case 7:
+    __fastpack7_iiu(in, out, exception, exceptcounter, count);
+    break;
+  case 15:
+    __fastpack15(in, out);
+    break;
+  case 32:
+    __fastpack32(in, out);
+    break;
+  default:
+		std::cout << "[arcj] ERORR !!!! Not available bit" << std::endl;
+    break;
+  }
+}
 template <uint32_t BlockSize>
 uint32_t *packblockup(const uint32_t *source, uint32_t *out,
                       const uint32_t bit) {

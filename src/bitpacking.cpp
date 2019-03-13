@@ -44,11 +44,66 @@ typename std::enable_if<DELTA + SHL < 32>::type
   }
 }
 
+// arcj: for iiu FIXME
+template<uint8_t DELTA, uint8_t SHR> typename std::enable_if<(DELTA + SHR) < 32>::type
+  unpack_single_out_iiu(const uint32_t *__restrict__ in, uint32_t *__restrict__ out) {
+
+  *out = ((*in) >> SHR) % (1 << DELTA);
+	//std::cout << "[arcj] unpack single out1 " << in << " / " << DELTA << " / " << SHR << " / " << DELTA + SHR << std::endl;
+}
+
+template<uint8_t DELTA, uint8_t SHR>
+  typename std::enable_if<(DELTA + SHR) >= 32>::type
+  unpack_single_out_iiu(const uint32_t *__restrict__ & in, uint32_t *__restrict__ out) {
+	//std::cout << "[arcj] unpack single out2 " << in << " / " << DELTA << " / " << SHR << " / " << DELTA + SHR << std::endl;
+
+  *out = (*in) >> SHR;
+  ++in;
+
+  static const uint8_t NEXT_SHR = SHR + DELTA - 32;
+  *out |= ((*in) % (1U << NEXT_SHR)) << (32 - SHR);
+}
+
+template<uint16_t DELTA, uint16_t SHL, uint32_t MASK>
+  typename std::enable_if<DELTA + SHL >= 32>::type
+  pack_single_in_iiu(const uint32_t in, uint32_t *__restrict__& out) {
+	//std::cout << "[arcj] pack single in1 " << in << "/ " << DELTA << " / " << SHL << " / " << DELTA + SHL << " / " << MASK << std::endl;
+	// case 2
+  *out |= in << SHL;
+	//std::cout << "[arcj] OUT: " << *out << std::endl;
+	//std::cout << "[arcj] out address2-1: " << out << std::endl;
+  ++out;
+	//std::cout << "[arcj] out address2-2: " << out << std::endl;
+
+	//// arcj: maybe, we don't use it
+  //if (DELTA + SHL > 32) {
+  //  *out = (in  & MASK) >> (32 - SHL); // arcj: remain bits
+  //}
+	//std::cout << "[arcj] pack_single_in1 " << in << " / " << *out << std::endl;
+}
+
+// arcj: when we can pack in into 32 bit
+template<uint16_t DELTA, uint16_t SHL, uint32_t MASK>
+typename std::enable_if<DELTA + SHL < 32>::type
+  pack_single_in_iiu(const uint32_t in, uint32_t *__restrict__ out) {
+	//std::cout << "[arcj] pack single in2 " << in << " / " << DELTA << " / " << SHL << " / " << DELTA + SHL << " / " << MASK << std::endl;
+
+	// case 1
+  if (SHL == 0) {
+    *out = in  & MASK; // 1111111 (127) FIXME: concate((in & MASK) 1(exception) or 0(normal))
+  } else {
+    *out |= (in & MASK) << SHL; // FIXME: SHL to SHL + 1bit (8bit)
+  }
+	//std::cout << "[arcj] pack_single_in2 " << in << " / " << *out << std::endl;
+	//std::cout << "[arcj] OUT: " << *out << std::endl;
+}
+
 
 template<uint16_t DELTA, uint16_t OINDEX = 0> struct Unroller {
   static_assert(DELTA < 32, "");
 
   static void Unpack(const uint32_t *__restrict__ & in, uint32_t *__restrict__ out) {
+		//std::cout << "[arcj] Unpack " << DELTA << std::endl;
     unpack_single_out<DELTA, (DELTA * OINDEX) % 32>(in, out + OINDEX);
 
     Unroller<DELTA, OINDEX + 1>::Unpack(in, out);
@@ -65,8 +120,44 @@ template<uint16_t DELTA, uint16_t OINDEX = 0> struct Unroller {
 
     Unroller<DELTA, OINDEX + 1>::PackNoMask(in, out);
   }
+
+	// arcj: for iiu FIXME
+  static void Unpack_iiu(const uint32_t *__restrict__ & in, uint32_t *__restrict__ out) {
+		//std::cout << "[arcj] Unpack_iiu " << DELTA << " / " << (DELTA * OINDEX) % 32 << std::endl;
+    //unpack_single_out_iiu<DELTA, (DELTA * OINDEX) % 32>(in, out + OINDEX);
+    unpack_single_out_iiu<DELTA + 1, ((DELTA + 1) * OINDEX) % 32>(in, out + OINDEX);
+
+    //Unroller<DELTA, OINDEX + 1>::Unpack_iiu(in, out);
+    Unroller<DELTA, OINDEX + 1>::Unpack_iiu(in, out);
+  }
+
+  static void Pack_iiu(const uint32_t *__restrict__ in, uint32_t *__restrict__ out, const uint32_t *__restrict__ exception, const size_t exceptcounter, const uint32_t count) {
+		// arcj: recursive function call
+		//std::cout << "[arcj] Pack_iiu1 " << DELTA << " / " << OINDEX << " / " << in[OINDEX] << std::endl;
+		//bool exceptiontrue = false;
+		//uint32_t pos = 0;
+		//for(uint32_t z = 0; z < exceptcounter; ++z) {
+		//	if(exception[z] == (OINDEX + count)) {
+		//		exceptiontrue = true;
+		//		pos = z;
+		//	}
+		//}
+    pack_single_in_iiu<DELTA+1, ((DELTA+1) * OINDEX) % 32, (1U << (DELTA+1)) - 1 >(in[OINDEX], out); // DELTA >> DELTA + 1 
+
+		//if(exceptiontrue) {
+		//	//std::cout << "[arcj] Pack_iiu1 exception-" << OINDEX + count << " / "<< exception[pos] << " / " << pos << " >> " << pos + 128 << std::endl;
+    //  pack_single_in_iiu<DELTA+1, ((DELTA+1) * OINDEX) % 32, (1U << (DELTA+1)) - 1 >(pos + 128, out); // DELTA >> DELTA + 1 
+		//} else {
+		//	//std::cout << "[arcj] Pack_iiu1 normal-" << OINDEX + count << " / " << in[OINDEX] << std::endl;
+    //  pack_single_in_iiu<DELTA+1, ((DELTA+1) * OINDEX) % 32, (1U << (DELTA+1)) - 1 >(in[OINDEX], out); // DELTA >> DELTA + 1 
+		//}
+    //pack_single_in_iiu<DELTA, (DELTA * OINDEX) % 32, (1U << DELTA) - 1 >(in[OINDEX], out); // original
+
+    Unroller<DELTA, OINDEX + 1>::Pack_iiu(in, out, exception, exceptcounter, count);
+  }
 };
 
+// arcj: packing 32th element Done.
 template<uint16_t DELTA> struct Unroller<DELTA, 31> {
   enum { SHIFT = (DELTA * 31) % 32 };
 
@@ -80,6 +171,39 @@ template<uint16_t DELTA> struct Unroller<DELTA, 31> {
 
   static void PackNoMask(const uint32_t *__restrict__ in, uint32_t *__restrict__ out) {
     *out |= (in[31] << SHIFT);
+  }
+
+	// arcj: for iiu FIXME
+  static void Unpack_iiu(const uint32_t *__restrict__ in, uint32_t *__restrict__ out) {
+		uint32_t shift = ((DELTA + 1) * 31) % 32;	
+    out[31] = (*in) >> shift;
+		//std::cout << "[arcj] Unpack_iiu2 " << DELTA << " / " << SHIFT << " / " << shift << " / " << in[31] << " / " << out[31] << std::endl;
+  }
+
+  static void Pack_iiu(const uint32_t *__restrict__ in, uint32_t *__restrict__ out, const uint32_t *__restrict__ exception, const size_t exceptcounter, const uint32_t count) {
+		// case 3
+		uint32_t shift = ((DELTA + 1) * 31) % 32;	
+		//std::cout << "[arcj] Pack_iiu2 " << DELTA << " / " << SHIFT << " / " << shift << " / " << in[31] << std::endl;
+		//bool exceptiontrue = false;
+		//uint32_t pos = 0;
+		//for(uint32_t z = 0; z < exceptcounter; ++z) {
+		//	if(exception[z] == (31 + count)) {
+		//		exceptiontrue = true;
+		//		pos = z;
+		//	}
+		//}
+		*out |= (in[31] << shift); 
+		//if(exceptiontrue) {
+		//	//std::cout << "[arcj] Pack_iiu2 exception-" << 31 + count << " / " << exception[pos] << " / " << pos << " >> " << pos + 128 << std::endl;
+		//	*out |= ((pos + 128) << shift); // SHIFT == 8 
+		//} else {
+		//	//std::cout << "[arcj] Pack_iiu2 normal-" << 31 + count << " / " << in[31] << std::endl;
+		//  *out |= (in[31] << shift); 
+		//}
+		//std::cout << "[arcj] OUT: " << *out << std::endl;
+		//std::cout << "[arcj] out address3: " << out << std::endl;
+
+    // *out |= (in[31] << SHIFT); // arcj: original
   }
 };
 
@@ -122,6 +246,11 @@ void __fastunpack6(const uint32_t *__restrict__ in,
 void __fastunpack7(const uint32_t *__restrict__ in,
                    uint32_t *__restrict__ out) {
   Unroller<7>::Unpack(in, out);
+}
+
+void __fastunpack7_iiu(const uint32_t *__restrict__ in,
+                   uint32_t *__restrict__ out) {
+  Unroller<7>::Unpack_iiu(in, out);
 }
 
 void __fastunpack9(const uint32_t *__restrict__ in,
@@ -300,6 +429,10 @@ void __fastpack6(const uint32_t *__restrict__ in, uint32_t *__restrict__ out) {
 
 void __fastpack7(const uint32_t *__restrict__ in, uint32_t *__restrict__ out) {
   Unroller<7>::Pack(in, out);
+}
+
+void __fastpack7_iiu(const uint32_t *__restrict__ in, uint32_t *__restrict__ out, const uint32_t *__restrict__ exception, const size_t exceptcounter, const uint32_t count) {
+  Unroller<7>::Pack_iiu(in, out, exception, exceptcounter, count);
 }
 
 void __fastpack9(const uint32_t *__restrict__ in, uint32_t *__restrict__ out) {

@@ -747,7 +747,7 @@ void message() {
 }
 
 int main(int argc, char **argv) {
-	cout << "[arcj] Start Main" << endl;
+	cout << "[arcj] Start Codecs" << endl;
   srand(10); // time(NULL));
   bool fulldisplay = true;
   bool displayhistogram = false;
@@ -829,12 +829,16 @@ int main(int argc, char **argv) {
 
         vector<vector<uint32_t, cacheallocator>> datas;
         cout << "# zipfian 1 data generation..." << endl;
-        for (uint32_t k = 0; k < (1U << 1); ++k)
+        for (uint32_t k = 0; k < (1U << 1); ++k) {
+					//cout << "[arcj] generated datas " << k << endl;
           datas.push_back(generateZipfianArray32(N, 1.0, 1U << 20));
+					//for (uint32_t y = 0; y < datas[k].size(); ++y)
+					//	cout << datas[k].at(y) << endl;
+				}
 
 				// arcj: need to sort for delta processing
 				if(needtosort) {
-					cout << "[arcj] sorting generated zipfian data" << endl;
+					//cout << "[arcj] sorting generated zipfian data" << endl;
 					for (uint32_t z = 0; z < (1U << 1); ++z) {
 						//cout << "[arcj] sorted datas " << z << endl;
 						sort(datas[z].begin(), datas[z].end());

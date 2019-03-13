@@ -30,6 +30,7 @@ void maskfnc(vector<uint32_t, cacheallocator> &out, const uint32_t L) {
 
 void fastpack(const vector<uint32_t, cacheallocator> &data,
               vector<uint32_t, cacheallocator> &out, const uint32_t bit) {
+	std::cout << "[arcj] fastpack in benchbitpacking" << std::endl;
   const size_t N = data.size();
   for (size_t k = 0; k < N / 32; ++k) {
     fastpack(&data[0] + 32 * k, &out[0] + bit * k, bit);

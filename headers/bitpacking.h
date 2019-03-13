@@ -166,4 +166,8 @@ void __fastpackwithoutmask31(const uint32_t *__restrict__ in,
 void __fastpackwithoutmask32(const uint32_t *__restrict__ in,
                              uint32_t *__restrict__ out);
 
+// arcj
+void __fastunpack7_iiu(const uint32_t *__restrict__ in, uint32_t *__restrict__ out);
+void __fastpack7_iiu(const uint32_t *__restrict__ in, uint32_t *__restrict__ out, const uint32_t *__restrict__ exception, const size_t exceptcounter, const uint32_t count);
+
 #endif // BITPACKING
