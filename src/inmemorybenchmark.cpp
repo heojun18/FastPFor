@@ -811,7 +811,7 @@ int main(int argc, char **argv) {
     cout << "# processing block" << endl;
     if (splitlongarrays)
       splitLongArrays(datas);
-    processparameters pp(true, false, false, false, true, separatedeltatimes);
+    processparameters pp(true, false, false, false, true, false, separatedeltatimes);
     Delta::process(myalgos, datas,
                    pp); // done collecting data, now allocating memory
   }

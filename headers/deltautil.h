@@ -158,12 +158,13 @@ struct processparameters {
   bool displayhistogram;
   bool computeentropy;
   bool cumulative;
+	bool needtoskiplist;
   bool separatetimes;
 
   processparameters(bool ndelta, bool fdisplay, bool dhisto, bool compentropy,
-                    bool cumul, bool separate = false)
+                    bool cumul, bool skiplist, bool separate = false)
       : needtodelta(ndelta), fulldisplay(fdisplay), displayhistogram(dhisto),
-        computeentropy(compentropy), cumulative(cumul),
+        computeentropy(compentropy), cumulative(cumul), needtoskiplist(skiplist),
         separatetimes(separate) {}
 };
 /**
@@ -317,7 +318,39 @@ public:
     }
   }
 
-	// arcj: Need to implement intersection, union, membership testing
+  template <class T> static void iiuDelta(T *pData, const size_t TotalQty) {
+		//std::cout << "[arcj] iiuDelta1 " << TotalQty << ": " << std::endl;
+		//for (size_t z = 0; z < TotalQty; ++z) {
+		//	std::cout << "(" << z << "/" << pData[z] << ") ";
+		//	if (z % 64 == 63) { std::cout << std::endl; }
+		//}
+		uint32_t tmp = 0;
+		uint32_t prev = 0;
+		for (size_t z = 0; z < TotalQty; ++z) {
+			if (z % 64 == 0) {
+				pData[z] = pData[z];
+			  prev = pData[z];	
+			} else {
+				tmp = pData[z] - prev;
+				prev = pData[z];
+				pData[z] = tmp;
+			}
+		}
+  }
+
+  template <class T>
+  static void iiuInverseDelta(T *pData, const size_t TotalQty) {
+		for (size_t z = 0; z < TotalQty; ++z) {
+			if (z % 64 == 0) {
+				pData[z] = pData[z];
+			} else {
+				pData[z] = pData[z] + pData[z-1];
+			}
+		}
+	}
+
+
+	// arcj: Need to implement membership testing, intersection
   // a convenience function
   template <class container>
   static void process(std::vector<algostats> &myalgos,
@@ -463,35 +496,28 @@ public:
             if (SIMDDeltas) {
               deltaSIMD(&backupdata[0], backupdata.size());
             } else {
-              fastDelta(&backupdata[0], backupdata.size());
+							if (pp.needtoskiplist) {
+								iiuDelta(&backupdata[0], backupdata.size());
+							} else {
+								fastDelta(&backupdata[0], backupdata.size());
+							}
             }
             timemsdelta += static_cast<double>(z.split());
           }
 
           z.reset();
 					// arcj: wall clock time: compression start
-					// arcj: print contents of backupdata.data
-					//std::cout << "[arcj] backupdata.data " << k << " " << backupdata.size() << std::endl;
+					//       print contents of backupdata.data
+					//std::cout << "[arcj] backupdata.data " << k << " " << backupdata.size() << ":" << std::endl;
 					//for(size_t z = 0; z < backupdata.size(); ++z) {
-					//	std::cout << backupdata.at(z) << " " << std::endl;
+					//	std::cout << backupdata.at(z) << "/ ";
+					//	if (z % 64 == 63) { std::cout << std::endl; }
 					//}
-
-					//std::cout << "[arcj] Delta::encodeArray1 " << backupdata.size() << " / " << nvalue 
-				  //  << " / " << outp << " / " << *outp << std::endl;
-					//std::cout << std::endl;
-
-					//std::cout << "[arcj] Delta::encodeArray1-1 " << outp << std::endl;
           c.encodeArray(backupdata.data(), backupdata.size(), outp, nvalue);
-					std::cout << "[arcj] Delta:: Encoding successfully" << std::endl;
-					//std::cout << "[arcj] Delta::encodeArray1-2 " << outp << std::endl;
-					
-					// arcj: wall clock time: compression end
           nvalues[k] = nvalue;
           timemscomp += static_cast<double>(z.split());
         }
-
         totalcompressed += nvalue;
-				//std::cout << "[arcj] Delta::encodeArray2 " << nvalue << "/" << totalcompressed << std::endl;
       }
       for (size_t k = 0; k < datas.size(); ++k) {
         const uint32_t *outp = outs[k].data();
@@ -503,15 +529,7 @@ public:
 
         z.reset();
 				// arcj: wall clock time: decompression start
-				//std::cout << "[arcj] Delta::decodeArray1 " << nvalue << "/" << recoveredsize << std::endl;
-
-				//std::cout << "[arcj] Delta::encodeArray2-1 " << outp << std::endl;
         c.decodeArray(outp, nvalue, recov, recoveredsize);
-				std::cout << "[arcj] Delta:: Decoding successfully" << std::endl;
-				//std::cout << "[arcj] Delta::encodeArray2-2 " << outp << std::endl;
-				//
-				//std::cout << "[arcj] Delta::decodeArray2 " << nvalue << "/" << recoveredsize << std::endl;
-				// arcj: wall clock time: decompression end
         timemsdecomp += static_cast<double>(z.split());
 
         if (pp.needtodelta) {
@@ -519,7 +537,11 @@ public:
           if (SIMDDeltas) {
             inverseDeltaSIMD(recov, recoveredsize);
           } else {
-            fastinverseDelta2(recov, recoveredsize);
+						if (pp.needtoskiplist) {
+							iiuInverseDelta(recov, recoveredsize);
+						} else {
+							fastinverseDelta2(recov, recoveredsize);
+						}
             // fastinverseDelta(recov, recoveredsize);
             // inverseDelta(recov, recoveredsize);
           }

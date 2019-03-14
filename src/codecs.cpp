@@ -714,6 +714,7 @@ static struct option long_options[] = {
     {"short", no_argument, 0, 's'},
     {"needtodelta", no_argument, 0, 'z'},
     {"needtosort", no_argument, 0, 'y'},
+    {"needtoskiplist", no_argument, 0, 'x'},
     {0, 0, 0, 0}};
 
 void message() {
@@ -755,6 +756,7 @@ int main(int argc, char **argv) {
 	// arcj: add needtodelta option
 	bool needtodelta = false;
 	bool needtosort = false;
+	bool needtoskiplist = false;
 
   bool splitlongarrays = true;
   vector<shared_ptr<IntegerCODEC>> tmp =
@@ -814,6 +816,9 @@ int main(int argc, char **argv) {
 		case 'y':
 			needtosort = true;
 			break;
+		case 'x':
+			needtoskiplist = true;
+			break;
     case 0: {
       if (optind < argc) {
         cout << "There are some trailing flags...?" << endl;
@@ -853,7 +858,8 @@ int main(int argc, char **argv) {
         //                     computeentropy, false);
 				// arcj: add need to delta
         processparameters pp(needtodelta, fulldisplay, displayhistogram,
-                             computeentropy, false);
+                             //computeentropy, false);
+                             computeentropy, false, needtoskiplist);
         Delta::process(myalgos, datas, pp);
         summarize(myalgos, "#");
         return 0;
@@ -866,7 +872,8 @@ int main(int argc, char **argv) {
         if (splitlongarrays)
           splitLongArrays(datas);
         processparameters pp(false, fulldisplay, displayhistogram,
-                             computeentropy, false);
+                             //computeentropy, false);
+                             computeentropy, false, needtoskiplist);
         Delta::process(myalgos, datas, pp);
         summarize(myalgos, "#");
         return 0;
@@ -880,7 +887,8 @@ int main(int argc, char **argv) {
         if (splitlongarrays)
           splitLongArrays(datas);
         processparameters pp(true, fulldisplay, displayhistogram,
-                             computeentropy, false);
+                             //computeentropy, false);
+                             computeentropy, false, needtoskiplist);
         Delta::process(myalgos, datas, pp);
         summarize(myalgos, "#");
         return 0;
@@ -895,7 +903,8 @@ int main(int argc, char **argv) {
         if (splitlongarrays)
           splitLongArrays(datas);
         processparameters pp(true, fulldisplay, displayhistogram,
-                             computeentropy, false);
+                             //computeentropy, false);
+                             computeentropy, false, needtoskiplist);
         Delta::process(myalgos, datas, pp);
         summarize(myalgos, "#");
         return 0;
@@ -910,7 +919,8 @@ int main(int argc, char **argv) {
         if (splitlongarrays)
           splitLongArrays(datas);
         processparameters pp(true, fulldisplay, displayhistogram,
-                             computeentropy, false);
+                             //computeentropy, false);
+                             computeentropy, false, needtoskiplist);
         Delta::process(myalgos, datas, pp);
         summarize(myalgos, "#");
         return 0;
@@ -925,7 +935,8 @@ int main(int argc, char **argv) {
         if (splitlongarrays)
           splitLongArrays(datas);
         processparameters pp(true, fulldisplay, displayhistogram,
-                             computeentropy, false);
+                             //computeentropy, false);
+                             computeentropy, false, needtoskiplist);
         Delta::process(myalgos, datas, pp);
         summarize(myalgos, "#");
         return 0;
@@ -940,7 +951,8 @@ int main(int argc, char **argv) {
         if (splitlongarrays)
           splitLongArrays(datas);
         processparameters pp(true, fulldisplay, displayhistogram,
-                             computeentropy, false);
+                             //computeentropy, false);
+                             computeentropy, false, needtoskiplist);
         Delta::process(myalgos, datas, pp);
         summarize(myalgos, "#");
         return 0;
@@ -954,7 +966,8 @@ int main(int argc, char **argv) {
         if (splitlongarrays)
           splitLongArrays(datas);
         processparameters pp(true, fulldisplay, displayhistogram,
-                             computeentropy, false);
+                             //computeentropy, false);
+                             computeentropy, false, needtoskiplist);
         Delta::process(myalgos, datas, pp);
         summarize(myalgos, "#");
         return 0;
@@ -968,7 +981,8 @@ int main(int argc, char **argv) {
         if (splitlongarrays)
           splitLongArrays(datas);
         processparameters pp(true, fulldisplay, displayhistogram,
-                             computeentropy, false);
+                             //computeentropy, false);
+                             computeentropy, false, needtoskiplist);
         Delta::process(myalgos, datas, pp);
         summarize(myalgos, "#");
         return 0;
@@ -982,7 +996,8 @@ int main(int argc, char **argv) {
         if (splitlongarrays)
           splitLongArrays(datas);
         processparameters pp(true, fulldisplay, displayhistogram,
-                             computeentropy, false);
+                             //computeentropy, false);
+                             computeentropy, false, needtoskiplist);
         Delta::process(myalgos, datas, pp);
         summarize(myalgos, "#");
         return 0;
@@ -1001,7 +1016,8 @@ int main(int argc, char **argv) {
           if (splitlongarrays)
             splitLongArrays(datas);
           processparameters pp(true, fulldisplay, displayhistogram,
-                               computeentropy, false);
+                               //computeentropy, false);
+														   computeentropy, false, needtoskiplist);
           Delta::process(myalgos, datas, pp, convert.str());
         }
         summarize(myalgos, "#");
@@ -1021,7 +1037,8 @@ int main(int argc, char **argv) {
           if (splitlongarrays)
             splitLongArrays(datas);
           processparameters pp(true, fulldisplay, displayhistogram,
-                               computeentropy, false);
+                               //computeentropy, false);
+                               computeentropy, false, needtoskiplist);
           Delta::process(myalgos, datas, pp, convert.str());
         }
         summarize(myalgos, "#");
@@ -1041,7 +1058,8 @@ int main(int argc, char **argv) {
           if (splitlongarrays)
             splitLongArrays(datas);
           processparameters pp(true, fulldisplay, displayhistogram,
-                               computeentropy, false);
+                               //computeentropy, false);
+                               computeentropy, false, needtoskiplist);
           Delta::process(myalgos, datas, pp, convert.str());
         }
         summarize(myalgos, "#");
@@ -1061,7 +1079,8 @@ int main(int argc, char **argv) {
           if (splitlongarrays)
             splitLongArrays(datas);
           processparameters pp(true, fulldisplay, displayhistogram,
-                               computeentropy, false);
+                               //computeentropy, false);
+                               computeentropy, false, needtoskiplist);
           Delta::process(myalgos, datas, pp, convert.str());
         }
         summarize(myalgos, "#");
@@ -1083,7 +1102,8 @@ int main(int argc, char **argv) {
           if (splitlongarrays)
             splitLongArrays(datas);
           processparameters pp(false, fulldisplay, displayhistogram,
-                               computeentropy, false);
+                               //computeentropy, false);
+                               computeentropy, false, needtoskiplist);
           Delta::process(myalgos, datas, pp, convert.str());
         }
         summarize(myalgos, "#");
@@ -1105,7 +1125,8 @@ int main(int argc, char **argv) {
           if (splitlongarrays)
             splitLongArrays(datas);
           processparameters pp(false, fulldisplay, displayhistogram,
-                               computeentropy, false);
+                               //computeentropy, false);
+                               computeentropy, false, needtoskiplist);
           Delta::process(myalgos, datas, pp, convert.str());
         }
         summarize(myalgos, "#");
