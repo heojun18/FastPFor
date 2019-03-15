@@ -57,9 +57,11 @@ public:
                                       size_t &nvalue);
 
   virtual void encodeArray(const uint32_t *in, const size_t len, uint32_t *out,
-                           size_t &nvalue);
+                           //size_t &nvalue);
+                           size_t &nvalue, uint32_t *skiplist);
   virtual const uint32_t *decodeArray(const uint32_t *in, const size_t len,
-                                      uint32_t *out, size_t &nvalue);
+                                      //uint32_t *out, size_t &nvalue);
+                                      uint32_t *out, size_t &nvalue, uint32_t *skiplist);
   virtual std::string name() const {
     std::ostringstream convert;
     convert << "NewPFor<" << BlockSizeInUnitsOfPackSize << "," << ecoder.name()
@@ -188,9 +190,12 @@ void NewPFor<BlockSizeInUnitsOfPackSize, ExceptionCoder>::encodeBlock(
       }
     }
 
-    if (nExceptions > 0)
+    if (nExceptions > 0) {
+			uint32_t tmpskip;
       ecoder.encodeArray(&exceptions[0], 2 * nExceptions, out + 1,
-                         encodedExceptions_sz);
+                         //encodedExceptions_sz);
+                         encodedExceptions_sz, &tmpskip);
+		}
     *out++ = (b << (PFORDELTA_NEXCEPT + PFORDELTA_EXCEPTSZ)) |
              (nExceptions << PFORDELTA_EXCEPTSZ) |
              static_cast<uint32_t>(encodedExceptions_sz);
@@ -213,7 +218,8 @@ void NewPFor<BlockSizeInUnitsOfPackSize, ExceptionCoder>::encodeBlock(
 
 template <uint32_t BlockSizeInUnitsOfPackSize, class ExceptionCoder>
 void NewPFor<BlockSizeInUnitsOfPackSize, ExceptionCoder>::encodeArray(
-    const uint32_t *in, const size_t len, uint32_t *out, size_t &nvalue) {
+    //const uint32_t *in, const size_t len, uint32_t *out, size_t &nvalue) {
+    const uint32_t *in, const size_t len, uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
   size_t csize;
 #ifndef NDEBUG
   const uint32_t *const initin(in);
@@ -264,9 +270,11 @@ NewPFor<BlockSizeInUnitsOfPackSize, ExceptionCoder>::decodeBlock(
 
   size_t twonexceptions = 2 * nExceptions;
   ++in;
+	uint32_t tmpskip;
   if (encodedExceptionsSize > 0)
     ecoder.decodeArray(in, encodedExceptionsSize, &exceptions[0],
-                       twonexceptions);
+                       //twonexceptions);
+                       twonexceptions, &tmpskip);
   assert(twonexceptions >= 2 * nExceptions);
   in += encodedExceptionsSize;
 
@@ -291,9 +299,11 @@ template <uint32_t BlockSizeInUnitsOfPackSize, class ExceptionCoder>
 const uint32_t *
 NewPFor<BlockSizeInUnitsOfPackSize, ExceptionCoder>::decodeArray(
 #ifndef NDEBUG
-    const uint32_t *in, const size_t len, uint32_t *out, size_t &nvalue) {
+    //const uint32_t *in, const size_t len, uint32_t *out, size_t &nvalue) {
+    const uint32_t *in, const size_t len, uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
 #else
-    const uint32_t *in, const size_t, uint32_t *out, size_t &nvalue) {
+    //const uint32_t *in, const size_t, uint32_t *out, size_t &nvalue) {
+    const uint32_t *in, const size_t, uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
 #endif
 #ifndef NDEBUG
   const uint32_t *const initin(in);

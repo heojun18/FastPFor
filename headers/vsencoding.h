@@ -314,10 +314,12 @@ public:
    * Note: *out must be large enough to contain the compress.
    */
   void encodeArray(const uint32_t *in, const size_t len, uint32_t *out,
-                   size_t &nvalue);
+                   //size_t &nvalue);
+                   size_t &nvalue, uint32_t *skiplist);
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t len,
-                              uint32_t *out, size_t &nvalue);
+                              //uint32_t *out, size_t &nvalue);
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist);
   uint32_t VSENCODING_BLOCKSZ; //     = 65536U
 
   std::vector<uint32_t> __tmp; // = new uint32_t[VSENCODING_BLOCKSZ * 2 +
@@ -684,7 +686,8 @@ const uint32_t *VSEncodingBlocks::decodeVS(uint32_t len, const uint32_t *in,
 }
 
 void VSEncodingBlocks::encodeArray(const uint32_t *in, const size_t len,
-                                   uint32_t *out, size_t &nvalue) {
+                                   //uint32_t *out, size_t &nvalue) { // arcj: org
+                                   uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
 #ifndef NDEBUG
   const uint32_t *const initout(out);
 #endif
@@ -714,10 +717,12 @@ void VSEncodingBlocks::encodeArray(const uint32_t *in, const size_t len,
 const uint32_t *VSEncodingBlocks::decodeArray(const uint32_t *in,
 #ifndef NDEBUG
                                               const size_t len, uint32_t *out,
-                                              size_t &nvalue) {
+                                              //size_t &nvalue) {
+                                              size_t &nvalue, uint32_t *skiplist) {
 #else
                                               const size_t, uint32_t *out,
-                                              size_t &nvalue) {
+                                              //size_t &nvalue) {
+                                              size_t &nvalue, uint32_t *skiplist) {
 #endif
 #ifndef NDEBUG
   const uint32_t *const initin(in);

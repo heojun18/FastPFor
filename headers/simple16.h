@@ -132,12 +132,14 @@ public:
     return (*in) >> (32 - SIMPLE16_LOGDESC);
   }
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue);
+                   //size_t &nvalue);
+                   size_t &nvalue, uint32_t *skiplist);
   // like encodeArray, but does not actually write out the data
   void fakeencodeArray(const uint32_t *in, const size_t length, size_t &nvalue);
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t len,
-                              uint32_t *out, size_t &nvalue);
+                              //uint32_t *out, size_t &nvalue);
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist);
   std::string name() const { return "Simple16"; }
   Simple16() {}
 
@@ -174,7 +176,8 @@ const typename Simple16<MarkLength>::unpacker
 
 template <bool MarkLength>
 void Simple16<MarkLength>::encodeArray(const uint32_t *in, const size_t length,
-                                       uint32_t *out, size_t &nvalue) {
+                                       //uint32_t *out, size_t &nvalue) {
+                                       uint32_t *out, size_t &nvalue, uint32_t *skiplis) {
   uint32_t NumberOfValuesCoded;
 #ifndef NDEBUG
   const uint32_t *const initin(in);
@@ -708,10 +711,12 @@ const uint32_t *Simple16<MarkLength>::decodeArray(const uint32_t *in,
 #ifndef NDEBUG
                                                   const size_t len,
                                                   uint32_t *out,
-                                                  size_t &nvalue) {
+                                                  //size_t &nvalue) {
+                                                  size_t &nvalue, uint32_t *skiplist) {
 #else
                                                   const size_t, uint32_t *out,
-                                                  size_t &nvalue) {
+                                                  //size_t &nvalue) {
+                                                  size_t &nvalue, uint32_t *skiplist) {
 #endif
 #ifndef NDEBUG
   const uint32_t *const endin = in + len;

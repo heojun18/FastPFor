@@ -261,7 +261,8 @@ public:
   std::string name() const { return "Simple8b_RLE"; }
 
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
 
     if (MarkLength) {
       *out++ = static_cast<uint32_t>(length);
@@ -274,7 +275,8 @@ public:
   }
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t length,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
 
     uint32_t markednvalue;
     if (MarkLength) {

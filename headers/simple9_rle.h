@@ -271,7 +271,8 @@ public:
   std::string name() const { return "Simple9_RLE"; }
 
   void encodeArray(const uint32_t *input, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     if (MarkLength) {
       *out++ = static_cast<uint32_t>(length);
     }
@@ -280,7 +281,8 @@ public:
   }
 
   const uint32_t *decodeArray(const uint32_t *input, const size_t length,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     uint32_t markednvalue;
     if (MarkLength) {
       markednvalue = *input++;

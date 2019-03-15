@@ -328,8 +328,8 @@ public:
 		uint32_t prev = 0;
 		for (size_t z = 0; z < TotalQty; ++z) {
 			if (z % 64 == 0) {
-				pData[z] = pData[z];
-			  prev = pData[z];	
+			  prev = pData[z]; // this value in skiplist
+				pData[z] = 0;
 			} else {
 				tmp = pData[z] - prev;
 				prev = pData[z];
@@ -339,10 +339,13 @@ public:
   }
 
   template <class T>
-  static void iiuInverseDelta(T *pData, const size_t TotalQty) {
+  static void iiuInverseDelta(T *pData, const size_t TotalQty, uint32_t *skiplist) {
+		size_t tmp = 0;
 		for (size_t z = 0; z < TotalQty; ++z) {
 			if (z % 64 == 0) {
-				pData[z] = pData[z];
+				//pData[z] = pData[z];
+				pData[z] = *(skiplist + tmp * 4);
+				tmp++;
 			} else {
 				pData[z] = pData[z] + pData[z-1];
 			}
@@ -458,9 +461,12 @@ public:
     size_t totallength = 0;
     size_t maxlength = 0;
     std::vector<container> outs(datas.size());
+    std::vector<container> skiplist(datas.size()); // skiplist
     for (size_t k = 0; k < datas.size(); ++k) {
       auto &data = datas[k];
       outs[k].resize(4 * data.size() + 2048 + 64);
+			skiplist[k].resize(data.size() / 64 * 4 + 4); // 4  = margin (skiplist (16B) = normal value (4B) + the # of exceptions (4B) + block address (8B))
+			//std::cout << "[arcj] datas " << datas[k].size() << "/" << outs[k].size() << "/" << skiplist[k].size() << "/" << sizeof(outs[k][0]) << std::endl;
       totallength += data.size();
       if (maxlength < data.size())
         maxlength = data.size();
@@ -483,6 +489,7 @@ public:
         if (datas[k].empty())
           continue;
         uint32_t *outp = &outs[k][0];
+        uint32_t *tmpskip = &skiplist[k][0]; // tmp skiplist
         nvalue = outs[k].size();
         assert(!needPaddingTo128Bits(outp));
         const size_t orignvalue = nvalue;
@@ -490,7 +497,14 @@ public:
           nvalue = orignvalue;
           backupdata.assign(datas[k].begin(),
                             datas[k].end()); // making a copy to be safe
-
+					// Fill skip list
+					size_t cnt = 0;
+					for (size_t z = 0; z < datas[k].size(); ++z) {
+						if (z % 64 == 0) {
+							skiplist[k][cnt] = datas[k].at(z);
+							cnt = cnt + 4;
+						}
+					}
           if (pp.needtodelta) {
             z.reset();
             if (SIMDDeltas) {
@@ -508,12 +522,17 @@ public:
           z.reset();
 					// arcj: wall clock time: compression start
 					//       print contents of backupdata.data
+					//size_t tmp = 0;
 					//std::cout << "[arcj] backupdata.data " << k << " " << backupdata.size() << ":" << std::endl;
 					//for(size_t z = 0; z < backupdata.size(); ++z) {
+					//	if (z % 64 == 0) { std::cout << "skip:" << *(tmpskip + 4 * tmp) << std::endl; tmp++; }
 					//	std::cout << backupdata.at(z) << "/ ";
 					//	if (z % 64 == 63) { std::cout << std::endl; }
 					//}
-          c.encodeArray(backupdata.data(), backupdata.size(), outp, nvalue);
+					//std::cout << std::endl;
+          //c.encodeArray(backupdata.data(), backupdata.size(), outp, nvalue);
+          c.encodeArray(backupdata.data(), backupdata.size(), outp, nvalue, tmpskip);
+					// arcj: wall clock time: compression end
           nvalues[k] = nvalue;
           timemscomp += static_cast<double>(z.split());
         }
@@ -521,6 +540,7 @@ public:
       }
       for (size_t k = 0; k < datas.size(); ++k) {
         const uint32_t *outp = outs[k].data();
+        uint32_t *tmpskip = skiplist[k].data(); // arcj
         nvalue = nvalues[k];
         size_t recoveredsize = datas[k].size();
         assert(recoveredsize > 0);
@@ -529,7 +549,8 @@ public:
 
         z.reset();
 				// arcj: wall clock time: decompression start
-        c.decodeArray(outp, nvalue, recov, recoveredsize);
+        //c.decodeArray(outp, nvalue, recov, recoveredsize);
+        c.decodeArray(outp, nvalue, recov, recoveredsize, tmpskip);
         timemsdecomp += static_cast<double>(z.split());
 
         if (pp.needtodelta) {
@@ -538,7 +559,7 @@ public:
             inverseDeltaSIMD(recov, recoveredsize);
           } else {
 						if (pp.needtoskiplist) {
-							iiuInverseDelta(recov, recoveredsize);
+							iiuInverseDelta(recov, recoveredsize, tmpskip);
 						} else {
 							fastinverseDelta2(recov, recoveredsize);
 						}

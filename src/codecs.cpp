@@ -753,8 +753,7 @@ int main(int argc, char **argv) {
   bool fulldisplay = true;
   bool displayhistogram = false;
   bool computeentropy = false;
-	// arcj: add needtodelta option
-	bool needtodelta = false;
+	bool needtodelta = false; // add needtodelta option
 	bool needtosort = false;
 	bool needtoskiplist = false;
 
@@ -808,7 +807,6 @@ int main(int argc, char **argv) {
     case 'f':
       fulldisplay = true;
       break;
-		// arcj: needtodelta, datas must be sorted
 		case 'z':
 			needtodelta = true;
 			needtosort = true;
@@ -828,9 +826,8 @@ int main(int argc, char **argv) {
       const char *parameter = long_options[option_index].name;
       cout << "# found " << parameter << endl;
       if (strcmp(parameter, "zipfian1") == 0) {
-        //const uint32_t N = 4194304 * 16;
-				// arcj: temporarily small N
-        const uint32_t N = 128 * 16;
+        const uint32_t N = 4194304 * 16;
+        //const uint32_t N = 128 * 16; // arcj: temporarily small N
 
         vector<vector<uint32_t, cacheallocator>> datas;
         cout << "# zipfian 1 data generation..." << endl;
@@ -840,8 +837,7 @@ int main(int argc, char **argv) {
 					//for (uint32_t y = 0; y < datas[k].size(); ++y)
 					//	cout << datas[k].at(y) << endl;
 				}
-
-				// arcj: need to sort for delta processing
+				// need to sort for delta processing
 				if(needtosort) {
 					//cout << "[arcj] sorting generated zipfian data" << endl;
 					for (uint32_t z = 0; z < (1U << 1); ++z) {
@@ -856,7 +852,6 @@ int main(int argc, char **argv) {
           splitLongArrays(datas);
         //processparameters pp(false, fulldisplay, displayhistogram,
         //                     computeentropy, false);
-				// arcj: add need to delta
         processparameters pp(needtodelta, fulldisplay, displayhistogram,
                              //computeentropy, false);
                              computeentropy, false, needtoskiplist);

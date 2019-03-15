@@ -152,7 +152,8 @@ public:
 #else
   const uint32_t *decodeArray(const uint32_t *in, const size_t,
 #endif
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
 #ifndef NDEBUG
     const uint32_t *const initin(in);
 #endif
@@ -185,7 +186,8 @@ public:
    * to simplify slightly the implementation.)
    */
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     checkifdivisibleby(length, BlockSize);
 #ifndef NDEBUG
     const uint32_t *const initout(out);
@@ -391,7 +393,8 @@ public:
   std::vector<uint8_t> bytescontainer;
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t length,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     const uint32_t *const initin(in);
     const size_t mynvalue = *in;
     ++in;
@@ -418,7 +421,8 @@ public:
    * to simplify slightly the implementation.)
    */
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     checkifdivisibleby(length, BlockSize);
     const uint32_t *const initout(out);
     const uint32_t *const finalin(in + length);
@@ -509,8 +513,10 @@ public:
     memcpy(out, &bytescontainer[0], bytescontainersize);
     out += (bytescontainersize + sizeof(uint32_t) - 1) / sizeof(uint32_t);
     size_t outcap = 0;
+		uint32_t tmpskip; // arcj: not working
     ecoder.encodeArray(datatobepacked.data(), datatobepacked.size(), out,
-                       outcap);
+                       //outcap);
+                       outcap, &tmpskip);
     out += outcap;
     nvalue = out - initout;
   }
@@ -527,7 +533,9 @@ public:
     datatobepacked.resize(datatobepacked.capacity());
     size_t cap = datatobepacked.size();
     size_t le = initin + length - inexcept;
-    inexcept = ecoder.decodeArray(inexcept, le, &datatobepacked[0], cap);
+		uint32_t tmpskip;
+    //inexcept = ecoder.decodeArray(inexcept, le, &datatobepacked[0], cap);
+    inexcept = ecoder.decodeArray(inexcept, le, &datatobepacked[0], cap, &tmpskip);
 
     length = inexcept - initin;
 

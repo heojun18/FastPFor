@@ -167,7 +167,8 @@ public:
   }
 
   void encodeArray(const uint32_t *in, const size_t len, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     *out++ = static_cast<uint32_t>(len);
 #ifndef NDEBUG
     const uint32_t *const finalin(in + len);
@@ -192,7 +193,8 @@ public:
     nvalue = totalnvalue;
   }
   const uint32_t *decodeArray(const uint32_t *in, const size_t len,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     nvalue = *in++;
     if (nvalue == 0)
       return in;

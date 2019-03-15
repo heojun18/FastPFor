@@ -63,7 +63,8 @@ public:
     return static_cast<uint32_t>((*in) >> (64 - SIMPLE8B_LOGDESC));
   }
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue);
+                   //size_t &nvalue);
+                   size_t &nvalue, uint32_t *skiplist);
 
   // like encode Array, but does not write the data
   void fakeencodeArray(const uint32_t *in, const size_t length, size_t &nvalue);
@@ -72,7 +73,8 @@ public:
    * able to accomodate the full uncompress data plus 240 elements.
    */
   const uint32_t *decodeArray(const uint32_t *in, const size_t len,
-                              uint32_t *out, size_t &nvalue);
+                              //uint32_t *out, size_t &nvalue);
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist);
   std::string name() const { return "Simple8b"; }
   Simple8b() {}
 
@@ -119,7 +121,8 @@ public:
 
 template <bool MarkLength>
 void Simple8b<MarkLength>::encodeArray(const uint32_t *in, const size_t length,
-                                       uint32_t *out, size_t &nvalue) {
+                                       //uint32_t *out, size_t &nvalue) {
+                                       uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
 #ifndef NDEBUG
   const uint32_t *const initin(in);
 #endif
@@ -485,10 +488,12 @@ const uint32_t *Simple8b<MarkLength>::decodeArray(const uint32_t *in,
 #ifndef NDEBUG
                                                   const size_t len,
                                                   uint32_t *out,
-                                                  size_t &nvalue) {
+                                                  //size_t &nvalue) {
+                                                  size_t &nvalue, uint32_t *skiplist) {
 #else
                                                   const size_t, uint32_t *out,
-                                                  size_t &nvalue) {
+                                                  //size_t &nvalue) {
+                                                  size_t &nvalue, uint32_t *skiplist) {
 #endif
 #ifndef NDEBUG
   // const uint32_t * const initin(in);

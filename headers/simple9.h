@@ -52,9 +52,11 @@ public:
     return (*in) >> (32 - SIMPLE9_LOGDESC);
   }
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue);
+                   //size_t &nvalue);
+                   size_t &nvalue, uint32_t *skiplist);
   const uint32_t *decodeArray(const uint32_t *in, const size_t len,
-                              uint32_t *out, size_t &nvalue);
+                              //uint32_t *out, size_t &nvalue);
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist);
   std::string name() const {
     if (hacked)
       return "Simple9hacked";
@@ -87,7 +89,8 @@ const typename Simple9<MarkLength, hacked>::unpacker
 template <bool MarkLength, bool hacked>
 void Simple9<MarkLength, hacked>::encodeArray(const uint32_t *in,
                                               const size_t length,
-                                              uint32_t *out, size_t &nvalue) {
+                                              //uint32_t *out, size_t &nvalue) {
+                                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
   uint32_t NumberOfValuesCoded;
   const uint32_t *const initout(out);
   if (MarkLength)
@@ -279,7 +282,8 @@ void Simple9<MarkLength, hacked>::encodeArray(const uint32_t *in,
 template <bool MarkLength, bool hacked>
 const uint32_t *
 Simple9<MarkLength, hacked>::decodeArray(const uint32_t *in, const size_t len,
-                                         uint32_t *out, size_t &nvalue) {
+                                         //uint32_t *out, size_t &nvalue) {
+                                         uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
   size_t lengths[] = {28, 14, 9, 7, 5, 4, 3, 2, 1};
   vector<uint32_t> stats(16, 0);
   size_t expectedlength = 0;
@@ -287,7 +291,8 @@ Simple9<MarkLength, hacked>::decodeArray(const uint32_t *in, const size_t len,
 template <bool MarkLength, bool hacked>
 const uint32_t *
 Simple9<MarkLength, hacked>::decodeArray(const uint32_t *in, const size_t /* len */,
-                                         uint32_t *out, size_t &nvalue) {
+                                         //uint32_t *out, size_t &nvalue) {
+                                         uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
 #endif
   if (MarkLength)
     if ((*in) > nvalue)

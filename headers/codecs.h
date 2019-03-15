@@ -36,7 +36,8 @@ public:
    * for *in and nvalue for *out).
    */
   virtual void encodeArray(const uint32_t *in, const size_t length,
-                           uint32_t *out, size_t &nvalue) = 0;
+                           //uint32_t *out, size_t &nvalue) = 0;
+													 uint32_t *out, size_t &nvalue, uint32_t *skiplist) = 0;
 
   /**
    * Usage is similar to decodeArray except that it returns a pointer
@@ -53,7 +54,8 @@ public:
    * overrun).
    */
   virtual const uint32_t *decodeArray(const uint32_t *in, const size_t length,
-                                      uint32_t *out, size_t &nvalue) = 0;
+                                      uint32_t *out, size_t &nvalue, uint32_t *skiplist) = 0;
+                                      //uint32_t *out, size_t &nvalue) = 0;
   virtual ~IntegerCODEC() {}
 
   /**
@@ -65,8 +67,10 @@ public:
   virtual std::vector<uint32_t> compress(const std::vector<uint32_t> &data) {
     std::vector<uint32_t> compresseddata(data.size() * 2 +
                                          1024); // allocate plenty of memory
+		uint32_t tmpskip;
     size_t memavailable = compresseddata.size();
-    encodeArray(&data[0], data.size(), &compresseddata[0], memavailable);
+    //encodeArray(&data[0], data.size(), &compresseddata[0], memavailable);
+    encodeArray(&data[0], data.size(), &compresseddata[0], memavailable, &tmpskip);
     compresseddata.resize(memavailable);
     return compresseddata;
   }
@@ -88,13 +92,14 @@ public:
     std::vector<uint32_t> data(
         expected_uncompressed_size); // allocate plenty of memory
     size_t memavailable = data.size();
+		uint32_t tmpskip;
     try {
       decodeArray(&compresseddata[0], compresseddata.size(), &data[0],
-                  memavailable);
+                  memavailable, &tmpskip);
     } catch (NotEnoughStorage &nes) {
       data.resize(nes.required + 1024);
       decodeArray(&compresseddata[0], compresseddata.size(), &data[0],
-                  memavailable);
+                  memavailable, &tmpskip);
     }
     data.resize(memavailable);
     return data;
@@ -109,7 +114,8 @@ public:
 class JustCopy : public IntegerCODEC {
 public:
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     memcpy(out, in, sizeof(uint32_t) * length);
     nvalue = length;
   }
@@ -120,7 +126,8 @@ public:
   }
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t length,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     memcpy(out, in, sizeof(uint32_t) * length);
     nvalue = length;
     return in + length;
@@ -137,7 +144,8 @@ class PackedCODEC : public IntegerCODEC {
 public:
   enum { BlockSize = 32 };
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     checkifdivisibleby(length, 32);
     const uint32_t b = maxbits(in, in + length);
     out[0] = static_cast<uint32_t>(length);
@@ -153,7 +161,8 @@ public:
 #else
   const uint32_t *decodeArray(const uint32_t *in, const size_t /*length*/,
 #endif
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     nvalue = in[0];
     const uint32_t b = in[1];
     assert(length >= nvalue * b / 32);

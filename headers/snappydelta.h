@@ -21,7 +21,8 @@ namespace FastPFor {
 class JustSnappy : public IntegerCODEC {
 public:
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     size_t howmuchroom = nvalue * 4;
     snappy::RawCompress(reinterpret_cast<const char *>(in), length * 4,
                         reinterpret_cast<char *>(out), &howmuchroom);
@@ -29,7 +30,8 @@ public:
   }
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t length,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     size_t nvalueinbytes;
     bool ok = snappy::GetUncompressedLength(reinterpret_cast<const char *>(in),
                                             length * 4, &nvalueinbytes);

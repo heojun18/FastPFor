@@ -26,7 +26,8 @@ namespace FastPForLib {
 template <bool delta = false> class VarIntGB : public IntegerCODEC {
 public:
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     uint32_t prev = 0; // for delta
 
     uint8_t *bout = reinterpret_cast<uint8_t *>(out);
@@ -163,7 +164,8 @@ public:
   }
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t length,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     uint32_t prev = 0; // for delta
 
     const uint8_t *inbyte = reinterpret_cast<const uint8_t *>(in);

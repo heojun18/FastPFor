@@ -31,7 +31,8 @@ public:
   static const uint32_t bits32 = 5; // constexprbits(32);
 
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     checkifdivisibleby(length, BlockSize);
     const uint32_t *const initout(out);
     *out++ = length;
@@ -62,7 +63,8 @@ public:
   }
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t /*length*/,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     const uint32_t actuallength = *in++;
     const uint32_t *const initout(out);
     uint32_t Bs[HowManyMiniBlocks];
@@ -107,7 +109,8 @@ public:
   static const uint32_t bits32 = 8; // 8 > gccbits(32);
 
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     checkifdivisibleby(length, BlockSize);
     const uint32_t *const initout(out);
     *out++ = static_cast<uint32_t>(length);
@@ -136,7 +139,8 @@ public:
   }
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t /*length*/,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     const uint32_t actuallength = *in++;
     const uint32_t *const initout(out);
     uint32_t Bs[HowManyMiniBlocks];
@@ -179,7 +183,8 @@ public:
   static const uint32_t BlockSize = HowManyMiniBlocks * MiniBlockSize;
 
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     checkifdivisibleby(length, BlockSize);
     const uint32_t *const initout(out);
     *out++ = static_cast<uint32_t>(length);
@@ -198,7 +203,8 @@ public:
   }
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t /*length*/,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     const uint32_t actuallength = *in++;
     const uint32_t *const initout(out);
     uint32_t Bs[HowManyMiniBlocks];
@@ -234,7 +240,8 @@ public:
   static const uint32_t bits32 = 5; // constexprbits(32);
 
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     checkifdivisibleby(length, BlockSize);
     const uint32_t *const initout(out);
     *out++ = length;
@@ -283,7 +290,8 @@ public:
   }
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t length,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     const uint32_t actuallength = *in++;
     const uint8_t *inbyte = reinterpret_cast<const uint8_t *>(in);
     const uint32_t *const initout(out);

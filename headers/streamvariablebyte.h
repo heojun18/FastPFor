@@ -47,7 +47,8 @@ uint8_t *svb_append_scalar_d1(uint8_t *keyPtr, uint8_t *dataPtr,
 class StreamVByte : public IntegerCODEC {
 public:
   void encodeArray(const uint32_t *in, const size_t count, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     uint64_t bytesWritten = svb_encode(
         (uint8_t *)out, in, static_cast<uint32_t>(std::min<size_t>(
                                 count, std::numeric_limits<uint32_t>::max())),
@@ -56,7 +57,8 @@ public:
   }
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t /* count */,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     uint32_t count = *(uint32_t *)in; // first 4 bytes is number of ints
     nvalue = count;
     if (count == 0)

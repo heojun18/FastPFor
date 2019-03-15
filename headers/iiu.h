@@ -54,7 +54,7 @@ public:
       DATATYPE; // this is so that our code looks more like the original paper
 
   IIU() : codedcopy(BlockSize), miss(BlockSize) {}
-  // for delta coding, we don't use a base.
+  // We use static b bit
   static uint32_t determineBestBase(const DATATYPE *in, size_t size) {
     if (size == 0)
       return 0;
@@ -108,43 +108,44 @@ public:
   uint32_t compressblockPFOR(const DATATYPE *__restrict__ in,
                              uint32_t *__restrict__ outputbegin,
                              const uint32_t b,
-                             DATATYPE *__restrict__ &exceptions) {
+                             //DATATYPE *__restrict__ &exceptions) {
+                             DATATYPE *__restrict__ &exceptions, uint32_t *__restrict__ skiplist) {
     if (b == 32) {
       for (size_t k = 0; k < BlockSize; ++k)
         *(outputbegin++) = *(in++);
       return BlockSize;
     }
-		// arcj: exception handling
     size_t exceptcounter = 0;
     const uint32_t maxgap = 1U << b;
+		uint32_t exceptcounter1[2] = {0, 0}; // for skiplist
+		uint32_t z = 0;
     {
       std::vector<uint32_t>::iterator cci = codedcopy.begin();
+			//std::cout << "[arcj] in: " << std::endl;
       for (uint32_t k = 0; k < BlockSize; ++k, ++cci) {
-				//std::cout << "[arcj] in " << in[k] << " / " << maxgap << std::endl;
-        miss[exceptcounter] = k; // arcj: the position of an exception value
+				//std::cout << "(" << k << "/" << in[k] << "/" << (in[k] >= maxgap) << ") ";
+        miss[exceptcounter] = k; // the position of an exception value
         exceptcounter += (in[k] >= maxgap);
+				if (k % 64 == 63) {	exceptcounter1[z++] = exceptcounter; }
       }
-			//std::cout << "[arcj] exception list " << exceptcounter << " : ";
-			//for (uint32_t z = 0; z < exceptcounter; ++z)
-			//	std::cout << miss[z] << "/";
-			//std::cout << std::endl;
+			*(skiplist + 1) = exceptcounter1[0];
+			*(skiplist + 5) = exceptcounter1[1] - exceptcounter1[0];
     }
-		// arcj: no exception FIXME
     if (exceptcounter == 0) {
-      //packblock(in, outputbegin, b);
+			//packblock(in, outputbegin, b);
       packblock(in, outputbegin, b, &miss[0], exceptcounter);
       return BlockSize;
     }
     codedcopy.assign(in, in + BlockSize);
     uint32_t firstexcept = miss[0];
     //uint32_t prev = 0;
-		//std::cout << "[arcj] codedcopy " << codedcopy.size() << " / " << firstexcept << " / " << codedcopy[firstexcept] << " / " << maxgap << " / " << BlockSize << std::endl;
+		size_t tmp = 0;
     *(exceptions++) = codedcopy[firstexcept]; // store the first exception value
-		codedcopy[firstexcept] = firstexcept + 128;
+		//codedcopy[firstexcept] = firstexcept + 128;
+		codedcopy[firstexcept] = tmp + 128; // set 8-th bit (exception bit)
+		tmp++;
     //prev = firstexcept;
-		// arcj: we don't consider maxgap
     //if (maxgap < BlockSize) {
-		//	std::cout << "[arcj] path 1" << std::endl;
     //  for (uint32_t i = 1; i < exceptcounter; ++i) {
     //    uint32_t cur = miss[i];
     //    // they don't include this part, but it is required:
@@ -163,39 +164,29 @@ public:
       for (uint32_t i = 1; i < exceptcounter; ++i) {
         uint32_t cur = miss[i];
         *(exceptions++) = codedcopy[cur];
-				//std::cout << "[arcj] compressblockPFOR1 " << cur << "/" << codedcopy[cur] << std::endl;
-				codedcopy[cur] = cur + 128;
-				//std::cout << "[arcj] compressblockPFOR2 " << cur << "/" << codedcopy[cur] - 128 << "/" << codedcopy[cur] << std::endl;
-				//std::cout << std::endl;
-				//std::cout << "(" << miss[i] << " / " << codedcopy[cur] << ") ";
-
-				// arcj: FIXME 
-				// change offset  cur - prev - 1 >> cur
+				codedcopy[cur] = tmp + 128;
+				tmp++;
         //codedcopy[prev] = cur - prev - 1; // arcj: the offset of next exception from this value
-				// arcj: FIXME
-        
 				//prev = cur;
       }
-			//std::cout << std::endl;
     //}
-		// arcj: exception handling
-
-    //packblock(&codedcopy[0], outputbegin, b);
+		//	std::cout << "[arcj] codedcopy: " << std::endl;
+		//for (uint32_t z = 0; z < BlockSize; z++) {
+		//	std::cout << codedcopy[z] << "/";
+		//	if(z % 64 == 63) { std::cout << std::endl; }
+		//}
+		//std::cout << std::endl;
+    //packblock(&codedcopy[0], outputbegin, b); // arcj: org
     packblock(&codedcopy[0], outputbegin, b, &miss[0], exceptcounter);
     return firstexcept; // arcj: the position (offset) of first exception value
   }
 
-  // void packblock(const uint32_t *source, uint32_t *out, const uint32_t bit) { 
-  void packblock(const uint32_t *source, uint32_t *out, const uint32_t bit, const uint32_t *exception, const size_t exceptcounter) { // arcj: bit == b bit
-		// per 32 elements
-    for (uint32_t j = 0; j != BlockSize; j += PACKSIZE) {
-		  //std::cout << "[arcj] packblock-" << j / PACKSIZE << " " << PACKSIZE << std::endl;
-			//std::cout << "[arcj] out address1-0: " << out << " / " << bit << std::endl;
+  // void packblock(const uint32_t *source, uint32_t *out, const uint32_t bit) {
+  void packblock(const uint32_t *source, uint32_t *out, const uint32_t bit /* b bit */, const uint32_t *exception, const size_t exceptcounter) {
+    for (uint32_t j = 0; j != BlockSize; j += PACKSIZE) { // per 32 elements
       fastpack_iiu(source + j, out, bit, exception, exceptcounter, j);
-			//std::cout << "[arcj] out address1-1: " << out << " / " << bit << std::endl;
       //out += bit;
       out += (bit + 1);
-			//std::cout << "[arcj] out address1-2: " << out << std::endl;
     }
   }
 
@@ -208,9 +199,9 @@ public:
   }
 
   void encodeArray(const uint32_t *in, const size_t len, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     *out++ = static_cast<uint32_t>(len);
-
 #ifndef NDEBUG
     const uint32_t *const finalin(in + len);
 #endif
@@ -226,18 +217,17 @@ public:
       }
       size_t thisnvalue = nvalue - totalnvalue;
       assert(in + i + l <= finalin);
-			//std::cout << "[arcj] IIU::encodeArray1 " << totalnvalue << "/" << thisnvalue << "/" << out << std::endl;
-      __encodeArray(&in[i], l, out, thisnvalue);
+      //__encodeArray(&in[i], l, out, thisnvalue);
+      __encodeArray(&in[i], l, out, thisnvalue, skiplist);
       totalnvalue += thisnvalue;
       assert(totalnvalue <= nvalue);
       out += thisnvalue;
-			//std::cout << "[arcj] IIU::encodeArray2 " << totalnvalue << "/" << thisnvalue << "/" << out << std::endl;
-			//std::cout << std::endl;
     }
     nvalue = totalnvalue;
   }
   const uint32_t *decodeArray(const uint32_t *in, const size_t len,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     nvalue = *in++;
     if (nvalue == 0)
       return in;
@@ -247,13 +237,13 @@ public:
     const uint32_t *const finalin = in + len;
     size_t totalnvalue(0);
     while (totalnvalue < nvalue) {
-			//std::cout << "[arcj] decodeArray1 " << totalnvalue << "/" << nvalue << "/" << len << "/" << in << "/" <<     finalin << std::endl;
       size_t thisnvalue = nvalue - totalnvalue;
 #ifndef NDEBUG
       const uint32_t *const befin(in);
 #endif
       assert(finalin <= len + in);
-      in = __decodeArray(in, finalin - in, out, thisnvalue);
+      //in = __decodeArray(in, finalin - in, out, thisnvalue);
+      in = __decodeArray(in, finalin - in, out, thisnvalue, skiplist);
       assert(in > befin);
       assert(in <= finalin);
       out += thisnvalue;
@@ -267,46 +257,68 @@ public:
   }
 
   void __encodeArray(const uint32_t *in, const size_t len, uint32_t *out,
-                     size_t &nvalue) {
+                     //size_t &nvalue) {
+                     size_t &nvalue, uint32_t *skiplist) {
     checkifdivisibleby(len, BlockSize);
     const uint32_t *const initout(out);
-    std::vector<DATATYPE> exceptions; // arcj:uint32_t
+    std::vector<DATATYPE> exceptions; // uint32_t
     exceptions.resize(len);
-    DATATYPE *__restrict__ i = &exceptions[0]; // arcj: 1 exception vector
-    const uint32_t b = determineBestBase(in, len); // 
-
+    DATATYPE *__restrict__ i = &exceptions[0]; // 1 exception vector
+    const uint32_t b = determineBestBase(in, len); 
     *out++ = static_cast<uint32_t>(len);
     *out++ = b;
-    for (size_t k = 0; k < len / BlockSize; ++k) { // arcj: BlockSize = 128
-      uint32_t *const headerout(out);
-      ++out;
-			// arcj: print original values
-			//std::cout << "[arcj] IIU original values" << k << "-th" << std::endl;
-			//std::cout << "In: ";
-			//for(size_t z = 0; z < BlockSize; ++z) {
-			//	std::cout << in[z] << " "; // before compression
-			//	if(((z+1) % 32) == 0)
-			//		std::cout << "//" << std::endl;
-			//}
-			//std::cout << std::endl;
-      uint32_t firstexcept = compressblockPFOR(in, out, b, i);
-			// arcj: print compressed values
-			//std::cout << "Out: ";
-			//for(size_t y = 0; y < (BlockSize * (b + 1)) / 32; ++y)
-			//	std::cout << out[y] << " "; // after compression
-			//std::cout << std::endl;
-      out += (BlockSize * (b + 1)) / 32; // out += (BlockSize * b) / 32; // arcj: original code 
+		
+		// arcj: mod
+    for (size_t k = 0; k < len / BlockSize; ++k) { // BlockSize = 128
+			*(skiplist + 2) = size_t(out) >> 32;
+			*(skiplist + 3) = size_t(out) & 0xFFFFFFFF;
+		  *(skiplist + 6) = size_t(out + (BlockSize * (b + 1)) / 32 / 2) >> 32;
+		  *(skiplist + 7) = size_t(out + (BlockSize * (b + 1)) / 32 / 2) & 0xFFFFFFFF;
+      //uint32_t firstexcept = compressblockPFOR(in, out, b, i, skiplist);
+			DATATYPE *tmp = i;
+			compressblockPFOR(in, out, b, i, skiplist);
+			// check values in skiplist
+			//std::cout << "[arcj] skiplist1: " << *(skiplist + 0) << "/" << *(skiplist + 1) << "/" << *(skiplist + 2) << "/" << *(skiplist + 3) << "/" << std::endl;
+			//std::cout << "[arcj] skiplist2: " << *(skiplist + 4) << "/" << *(skiplist + 5) << "/" << *(skiplist + 6) << "/" << *(skiplist + 7) << "/" << std::endl;
+      out += (BlockSize * (b + 1)) / 32; 
       in += BlockSize;
-      const uint32_t bitsforfirstexcept = blocksizeinbits;
-      const uint32_t firstexceptmask = (1U << blocksizeinbits) - 1;
-      const uint32_t exceptindex = static_cast<uint32_t>(i - &exceptions[0]);
-      *headerout =
-          (firstexcept & firstexceptmask) | (exceptindex << bitsforfirstexcept);
+			for (uint32_t t = 0; t < (*(skiplist + 1) + *(skiplist + 5)); ++t) {
+		  	*out++ = *(tmp + t);
+			}
+			skiplist += 8;
     }
-    const size_t howmanyexcept = i - &exceptions[0];
-    for (uint32_t t = 0; t < howmanyexcept; ++t)
-      *out++ = exceptions[t];
     nvalue = out - initout;
+
+		//// arcj: org
+    //for (size_t k = 0; k < len / BlockSize; ++k) { // arcj: BlockSize = 128
+    //  uint32_t *const headerout(out);
+    //  ++out;
+    //  //uint32_t firstexcept = compressblockPFOR(in, out, b, i); // arcj: org
+		//	//*(skiplist + 2) = size_t(out) >> 32;
+		//	//*(skiplist + 3) = size_t(out) & 0xFFFFFFFF;
+		//	//*(skiplist + 6) = size_t(out + (BlockSize * (b + 1)) / 32 / 2) >> 32;
+		//	//*(skiplist + 7) = size_t(out + (BlockSize * (b + 1)) / 32 / 2) & 0xFFFFFFFF;
+		//	//std::cout << "[arcj] out1 " << out << "/" << out + (BlockSize * (b + 1)) / 32 / 2 << std::endl;
+		//	//std::cout << "[arcj] encode1 " << i << std::endl;
+    //  uint32_t firstexcept = compressblockPFOR(in, out, b, i, skiplist);
+    //  out += (BlockSize * (b + 1)) / 32; 
+		//	// out += (BlockSize * b) / 32; // arcj: org
+		//	std::cout << "[arcj] encode1 " << *(skiplist + 5) + *(skiplist + 1) << std::endl;
+    //  in += BlockSize;
+		//	skiplist += 8;
+		//	// arcj: we don't need this part
+    //  const uint32_t bitsforfirstexcept = blocksizeinbits;
+    //  const uint32_t firstexceptmask = (1U << blocksizeinbits) - 1;
+    //  const uint32_t exceptindex = static_cast<uint32_t>(i - &exceptions[0]);
+		//	std::cout << "[arcj] encode2 " << i  << "/" << exceptindex << std::endl;
+    //  *headerout =
+    //      (firstexcept & firstexceptmask) | (exceptindex << bitsforfirstexcept);
+    //}
+    //const size_t howmanyexcept = i - &exceptions[0];
+		////std::cout << "[arcj] encode3 " <<howmanyexcept << "/" << i << "/" << &exceptions[0] << std::endl;
+    //for (uint32_t t = 0; t < howmanyexcept; ++t)
+    //  *out++ = exceptions[t];
+    //nvalue = out - initout;
   }
 
 #ifndef NDEBUG
@@ -314,35 +326,54 @@ public:
 #else
   const uint32_t *__decodeArray(const uint32_t *in, const size_t,
 #endif
-                                uint32_t *out, size_t &nvalue) {
+                                //uint32_t *out, size_t &nvalue) {
+                                uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
 #ifndef NDEBUG
     const uint32_t *const initin(in);
 #endif
     nvalue = *in++;
     checkifdivisibleby(nvalue, BlockSize);
     const uint32_t b = *in++;
-    const DATATYPE *__restrict__ except =
-        //in + nvalue * b / 32 + nvalue / BlockSize; 
-        in + nvalue * (b + 1) / 32 + nvalue / BlockSize; // FIXME  maybe here is the problem
-    const uint32_t bitsforfirstexcept = blocksizeinbits;
-    const uint32_t firstexceptmask = (1U << blocksizeinbits) - 1;
-    const DATATYPE *endexceptpointer = except;
-    const DATATYPE *const initexcept(except);
+    const uint32_t *except = in;
+    //const DATATYPE *__restrict__ except =
+        //in + nvalue * b / 32 + nvalue / BlockSize; // arcj: org 
+    //    in + nvalue * (b + 1) / 32 + nvalue / BlockSize;
+    //const uint32_t bitsforfirstexcept = blocksizeinbits;
+    //const uint32_t firstexceptmask = (1U << blocksizeinbits) - 1;
+    //const DATATYPE *endexceptpointer;
+    const uint32_t *endexceptpointer = in;
+    //const DATATYPE *const initexcept(except);
     uint32_t arc_prev = 0;
+
+		// arcj: mod
     for (size_t k = 0; k < nvalue / BlockSize; ++k) {
-      const uint32_t *const headerin(in);
-      ++in;
-      const uint32_t firstexcept = *headerin & firstexceptmask;
-      const uint32_t exceptindex = *headerin >> bitsforfirstexcept;
-      endexceptpointer = initexcept + exceptindex;
-			//std::cout << "[arcj] firstexcept " << firstexcept << std::endl;
-      //uncompressblockPFOR(in, out, b, except, endexceptpointer, firstexcept);
-      uncompressblockPFOR(in, out, b, except, endexceptpointer, firstexcept, exceptindex, arc_prev);
-			arc_prev = exceptindex;
-      //in += (BlockSize * b) / 32;
-      in += (BlockSize * (b + 1)) / 32; // FIXME
+      const uint32_t firstexcept = 0; // we don't need it
+      const uint32_t exceptindex = 0;
+			// calculate exception address
+			except += ((BlockSize * (b + 1)) / 32);
+			endexceptpointer += ((BlockSize * (b + 1)) / 32) + *(skiplist + 1) + *(skiplist + 5);
+      uncompressblockPFOR(in, out, b, except, /*we don't need following args*/endexceptpointer, firstexcept, exceptindex, arc_prev, skiplist);
+      in += (BlockSize * (b + 1)) / 32 + *(skiplist + 1) + *(skiplist + 5);
       out += BlockSize;
-    }
+			skiplist += 8;
+		}
+
+		// arcj: org
+    //for (size_t k = 0; k < nvalue / BlockSize; ++k) {
+    //  const uint32_t *const headerin(in);
+    //  ++in;
+    //  const uint32_t firstexcept = *headerin & firstexceptmask;
+    //  const uint32_t exceptindex = *headerin >> bitsforfirstexcept;
+    //  endexceptpointer = initexcept + exceptindex;
+		//	//std::cout << "[arcj] decode " << firstexcept << "/" << exceptindex << "/" << endexceptpointer << std::endl;
+    //  //uncompressblockPFOR(in, out, b, except, endexceptpointer, firstexcept); // arcj: org
+    //  uncompressblockPFOR(in, out, b, except, endexceptpointer, firstexcept, exceptindex, arc_prev, skiplist);
+		//	arc_prev = exceptindex;
+    //  //in += (BlockSize * b) / 32; // arcj: org
+    //  in += (BlockSize * (b + 1)) / 32;
+    //  out += BlockSize;
+		//	skiplist += 8;
+    //}
     assert(initin + len >= in);
     assert(initin + len >= endexceptpointer);
     return endexceptpointer;
@@ -352,39 +383,24 @@ public:
           *__restrict__ inputbegin, // points to the first packed word
       DATATYPE *__restrict__ outputbegin,
       const uint32_t b,
-      const DATATYPE *__restrict__
+      //const DATATYPE *__restrict__
+      const uint32_t *
           &i, // i points to value of the first exception
-      const DATATYPE *__restrict__ end_exception,
+      const uint32_t *end_exception,
+      //const DATATYPE *__restrict__ end_exception,
       size_t next_exception, // points to the position of the first exception
       const uint32_t exceptindex,
-			const uint32_t prev
+			const uint32_t prev,
+			uint32_t *__restrict__ skiplist
       ) {
-		//std::cout << "[arcj] uncompressblockPFOR1" << std::endl;
     unpackblock(inputbegin, reinterpret_cast<uint32_t *>(outputbegin),
                 b); /* bit-unpack the values */
-		// arcj: FIXME
-		//std::cout << "[arcj] uncompressblockPFOR " << exceptindex - prev << "/" << next_exception << std::endl;
-		//std::cout << "[arcj] values: " << std::endl;
-		////bool tmp = false;
 		for (uint32_t z = 0; z < 128; ++z) {
 			if (outputbegin[z] >= 128) {
 				outputbegin[z] = *(i++);
 			} 
-			//else {
-			//}
 		}
-		//	//if (outputbegin[z] >= 128) {
-		//	//	if(!tmp) {
-		//	//		std::cout << next_exception << "/";
-		//	//		tmp = true;
-		//	//	} else {
-		//	//		std::cout << outputbegin[z] - 128 << "/";
-		//	//	}
-		//	//}
-		//}
-		//std::cout << std::endl;
-
-		// arcj: original FIXME
+		// arcj: org
     //for (size_t cur = next_exception; i != end_exception;
     //     cur = next_exception) {
     //  next_exception = cur + static_cast<size_t>(outputbegin[cur]) + 1;

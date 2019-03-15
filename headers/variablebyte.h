@@ -23,7 +23,8 @@ public:
   }
 
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     uint8_t *bout = reinterpret_cast<uint8_t *>(out);
     const uint8_t *const initbout = reinterpret_cast<uint8_t *>(out);
     size_t bytenvalue = nvalue * sizeof(uint32_t);
@@ -87,7 +88,8 @@ public:
   }
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t length,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     decodeFromByteArray((const uint8_t *)in, length * sizeof(uint32_t), out,
                         nvalue);
     return in + length;
@@ -173,7 +175,8 @@ public:
   }
 
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     uint8_t *bout = reinterpret_cast<uint8_t *>(out);
     const uint8_t *const initbout = reinterpret_cast<uint8_t *>(out);
     size_t bytenvalue = nvalue * sizeof(uint32_t);
@@ -237,7 +240,8 @@ public:
   }
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t length,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     decodeFromByteArray((const uint8_t *)in, length * sizeof(uint32_t), out,
                         nvalue);
     return in + length;

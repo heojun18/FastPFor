@@ -46,14 +46,17 @@ int main() {
         // not hurt others
         uint32_t *aligned_out = &out[0];
         assert(!needPaddingTo64bytes(aligned_out));
-        c.encodeArray(&data[0], data.size(), aligned_out, nvalue);
+				uint32_t tmpskip;
+        //c.encodeArray(&data[0], data.size(), aligned_out, nvalue);
+        c.encodeArray(&data[0], data.size(), aligned_out, nvalue, &tmpskip);
         out.resize(nvalue);
         vector<uint32_t, cacheallocator> recover(data.size() + 1024);
 
         for (uint32_t k = 0; k < recover.size(); ++k)
           recover[k] = rand();
         size_t recoveredsize = recover.size();
-        c.decodeArray(aligned_out, out.size(), &recover[0], recoveredsize);
+        //c.decodeArray(aligned_out, out.size(), &recover[0], recoveredsize);
+        c.decodeArray(aligned_out, out.size(), &recover[0], recoveredsize, &tmpskip);
         recover.resize(recoveredsize);
         if (recover != data) {
           if (recoveredsize != data.size()) {
@@ -96,13 +99,16 @@ int main() {
         size_t nvalue = out.size();
         uint32_t *aligned_out = &out[0];
         assert(!needPaddingTo64bytes(aligned_out));
-        c.encodeArray(data.data(), data.size(), aligned_out, nvalue);
+				uint32_t tmpskip;
+        //c.encodeArray(data.data(), data.size(), aligned_out, nvalue);
+        c.encodeArray(data.data(), data.size(), aligned_out, nvalue, &tmpskip);
         out.resize(nvalue);
         vector<uint32_t, cacheallocator> recover(data.size() + 1024);
         for (uint32_t k = 0; k < recover.size(); ++k)
           recover[k] = rand();
         size_t recoveredsize = recover.size();
-        c.decodeArray(aligned_out, out.size(), &recover[0], recoveredsize);
+        //c.decodeArray(aligned_out, out.size(), &recover[0], recoveredsize);
+        c.decodeArray(aligned_out, out.size(), &recover[0], recoveredsize, &tmpskip);
         recover.resize(recoveredsize);
         if (recoveredsize != data.size()) {
           cerr << "lengths don't match!" << endl;
@@ -150,7 +156,9 @@ int main() {
       cout.flush();
       uint32_t *aligned_out = &out[0];
       assert(!needPaddingTo64bytes(aligned_out));
-      c.encodeArray(&data[0], data.size(), aligned_out, nvalue);
+			uint32_t tmpskip;
+      //c.encodeArray(&data[0], data.size(), aligned_out, nvalue);
+      c.encodeArray(&data[0], data.size(), aligned_out, nvalue, &tmpskip);
       out.resize(nvalue);
       assert(out.size() == nvalue); // paranoid
       vector<uint32_t, cacheallocator> recover(data.size() + 1024);
@@ -161,7 +169,8 @@ int main() {
       size_t recoveredsize = recover.size();
       cout << " decoding ...";
       cout.flush();
-      c.decodeArray(aligned_out, out.size(), &recover[0], recoveredsize);
+      //c.decodeArray(aligned_out, out.size(), &recover[0], recoveredsize);
+      c.decodeArray(aligned_out, out.size(), &recover[0], recoveredsize, &tmpskip);
       recover.resize(recoveredsize);
       if (recoveredsize != data.size()) {
         cerr << "lengths don't match!" << endl;

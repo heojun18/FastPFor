@@ -83,7 +83,8 @@ public:
   }
 
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     const uint32_t *src = in;
     size_t srclength = length * 4;
 
@@ -99,7 +100,8 @@ public:
   }
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t length,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
 
     const unsigned char *src = reinterpret_cast<const unsigned char *>(in);
     const uint32_t *const initdst = out;

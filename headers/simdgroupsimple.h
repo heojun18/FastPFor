@@ -812,7 +812,8 @@ public:
   }
 
   void encodeArray(const uint32_t *in, const size_t len, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     checkifdivisibleby(len, BlockSize);
     if (needPaddingTo128Bits(in))
       throw std::runtime_error("the input buffer must be aligned to 16 bytes");
@@ -824,7 +825,8 @@ public:
   }
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t len,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     if (needPaddingTo128Bits(out))
       throw std::runtime_error("the output buffer must be aligned to 16 bytes");
     

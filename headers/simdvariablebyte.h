@@ -34,7 +34,8 @@ public:
   MaskedVByte() {}
 
   void encodeArray(const uint32_t *in, const size_t length, uint32_t *out,
-                   size_t &nvalue) {
+                   //size_t &nvalue) {
+                   size_t &nvalue, uint32_t *skiplist) {
     const uint8_t *const initbout = reinterpret_cast<uint8_t *>(out);
     uint8_t *bout = reinterpret_cast<uint8_t *>(out);
     for (size_t k = 0; k < length; ++k) {
@@ -88,7 +89,8 @@ public:
   }
 
   const uint32_t *decodeArray(const uint32_t *in, const size_t length,
-                              uint32_t *out, size_t &nvalue) {
+                              //uint32_t *out, size_t &nvalue) {
+                              uint32_t *out, size_t &nvalue, uint32_t *skiplist) {
     const uint8_t *inbyte = reinterpret_cast<const uint8_t *>(in);
     nvalue = masked_vbyte_read_loop_fromcompressedsize(inbyte, out, length * 4);
     return reinterpret_cast<const uint32_t *>(inbyte);

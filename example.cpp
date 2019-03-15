@@ -44,8 +44,10 @@ int main() {
   //
   //
   size_t compressedsize = compressed_output.size();
+	uint32_t tmpskip;
   codec.encodeArray(mydata.data(), mydata.size(), compressed_output.data(),
-                    compressedsize);
+                    //compressedsize);
+                    compressedsize, &tmpskip);
   //
   // if desired, shrink back the array:
   compressed_output.resize(compressedsize);
@@ -66,7 +68,8 @@ int main() {
   size_t recoveredsize = mydataback.size();
   //
   codec.decodeArray(compressed_output.data(), compressed_output.size(),
-                    mydataback.data(), recoveredsize);
+                    //mydataback.data(), recoveredsize);
+                    mydataback.data(), recoveredsize, &tmpskip);
   mydataback.resize(recoveredsize);
   //
   // That's it!
